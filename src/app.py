@@ -5,7 +5,7 @@ apply_all_configs()
 
 LANDINGS = [
     "Proyectos", "Licencias", "Equipo", "Asignación a proyectos", "Asignación total", "Métricas", "Boost",
-    "Asignación a Boost"
+    "Asignación a Boost", "Dashboard operativo"
 ]
 
 def main():
@@ -17,6 +17,7 @@ def main():
     from pages.metrics import show_metrics
     from pages.boost import show_boost
     from pages.assignation_boost import show_assignation_boost
+    from pages.dashboard_operativo import show_dashboard_operativo
 
     # st.title("Project Management System")
 
@@ -43,6 +44,8 @@ def main():
                 show_boost()
             elif landing == "Asignación a Boost":
                 show_assignation_boost()
+            elif landing == "Dashboard operativo":
+                show_dashboard_operativo()
         if tab:
             st.session_state.selected_tab = landing
             st.query_params = {"selected_tab": st.session_state.selected_tab}
