@@ -1,0 +1,9 @@
+[ui]
+hideTopBar = true
+
+[client]
+showSidebarNavigation = false
+
+[browser]
+serverAddress = "localhost"
+serverPort = 8501
