@@ -26,8 +26,8 @@ def create_dashboard_operativo_table():
     Fecha_fin TEXT,
     Porcentaje_avance TEXT,
     Burndown_rate TEXT,
-    Desvio_[semanas] TEXT,
-    Desvio_en_[%]_de_horas TEXT,
+    Desvio_en_semanas TEXT,
+    Desvio_en_porcentaje_de_horas TEXT,
     Checklist_grade TEXT,
     Satisfaccion_percibida_por_cliente TEXT,
     Project_Leader_Alert TEXT, 
@@ -75,11 +75,19 @@ def show_dashboard_operativo():
         time.sleep(1)
         message.empty()
 
-    st.session_state.edited_dashboard_operativo = st.data_editor(
-        st.session_state.dashboard_operativo,
-        num_rows="dynamic",
-        use_container_width=True,
-        hide_index=True,
-        height=600,
-    )
-    save_changes()
+    with st.form("dashboard_operativo_form"):
+        # Submit button
+        _, col1, _ = st.columns([4, 2, 4])
+        with col1:
+            submitted = st.form_submit_button("Guardar cambios", use_container_width=True)
+
+        st.session_state.edited_dashboard_operativo = st.data_editor(
+            st.session_state.dashboard_operativo,
+            num_rows="dynamic",
+            use_container_width=True,
+            hide_index=True,
+            height=600,
+        )
+
+    if submitted:
+        save_changes()
