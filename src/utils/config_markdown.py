@@ -1,15 +1,9 @@
 import streamlit as st
 
 def set_page_config():
-    # st.set_page_config(
-    #     page_title="Project Management System",
-    #     layout="wide",
-    #     initial_sidebar_state="collapsed",
-    #     page_icon="🇦🇲",
-    # )
     st.session_state.page_config = (
         st.set_page_config(
-            page_title="Project Management System",
+            page_title="Gestión Operativa",
             layout="wide",
             initial_sidebar_state="collapsed",
             page_icon="🇦🇲",
@@ -53,7 +47,7 @@ def remove_top_padding():
 def add_title():
     st.markdown(
         """
-        <h1 style='text-align: center;'>Project Management System</h1>
+        <h1 style='text-align: center;'>Gestión Operativa</h1>
         """,
         unsafe_allow_html=True
     )

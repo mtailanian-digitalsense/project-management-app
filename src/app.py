@@ -4,7 +4,7 @@ from utils.config_markdown import apply_all_configs
 apply_all_configs()
 
 LANDINGS = [
-    "Proyectos", "Licencias", "Equipo", "Asignación a proyectos", "Asignación total", "Métricas", "Boost",
+    "Asignación", "Licencia", "Equipo", "Asignación por proyectos", "Asignación total", "Métricas", "Boost",
     "Asignación a Boost", "Dashboard operativo"
 ]
 
@@ -19,8 +19,6 @@ def main():
     from pages.assignation_boost import show_assignation_boost
     from pages.dashboard_operativo import show_dashboard_operativo
 
-    # st.title("Project Management System")
-
     if 'selected_tab' not in st.session_state:
         st.session_state.selected_tab = LANDINGS[0]
 
@@ -28,13 +26,13 @@ def main():
 
     for i, (tab, landing) in enumerate(zip(tabs, LANDINGS)):
         with tab:
-            if landing == "Proyectos":
+            if landing == "Asignación":
                 show_projects()
-            elif landing == "Licencias":
+            elif landing == "Licencia":
                 show_holidays()
             elif landing == "Equipo":
                 show_team()
-            elif landing == "Asignación a proyectos":
+            elif landing == "Asignación por proyectos":
                 show_assignation_projects()
             elif landing == "Asignación total":
                 show_assignation_total()
