@@ -33,7 +33,6 @@ def show_holidays():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 
-
     service = build('calendar', 'v3', credentials=creds)
 
     events_result = service.events().list(
@@ -72,8 +71,8 @@ def show_holidays():
 
     # How many days from each month are holidays
     holidays = df.join(
-        df.apply(lambda p: pd.Series(pd.date_range(p['start'], p['end'], freq='D').to_period('M')), axis=1)
-        .apply(lambda x: pd.Series(x).value_counts() - 1, axis=1)
+        df.apply(lambda p: pd.Series(pd.date_range(pd.to_datetime(p['start']), pd.to_datetime(p['end']) - pd.Timedelta(days=1), freq='B').to_period('M')), axis=1)
+        .apply(lambda x: pd.Series(x).value_counts(), axis=1)
         .fillna(0)
         .astype(int)
     )
@@ -124,3 +123,7 @@ def show_holidays():
 
         },
     )
+
+
+if __name__ == '__main__':
+    show_holidays()
