@@ -1,12 +1,15 @@
 import streamlit as st
 import pandas as pd
-import datetime
 import os.path
 from unidecode import unidecode
+import difflib
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+
+from .team import load_team_members
+
 
 CALENDAR_ID = "hunf5b8n0rpad4o898t54h5trl69l66r@import.calendar.google.com"
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -15,7 +18,8 @@ MONTHS = [
     'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ]
 
-def show_holidays():
+
+def compute_monthly_holidays():
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first time.
@@ -32,9 +36,7 @@ def show_holidays():
         # Save the credentials for the next run
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
-
     service = build('calendar', 'v3', credentials=creds)
-
     events_result = service.events().list(
         calendarId=CALENDAR_ID,  # 'primary',
         timeMin='2025-01-01T00:00:00Z',
@@ -44,7 +46,6 @@ def show_holidays():
         orderBy='startTime'
     ).execute()
     events = events_result.get('items', [])
-
     # Create dataframe with events
     events_data = []
     for event in events:
@@ -53,13 +54,11 @@ def show_holidays():
         end = event['end'].get('dateTime', event['end'].get('date'))
         status = event.get('status')
         events_data.append({'name': name, 'start': start, 'end': end, 'status': status})
-
     # Create a DataFrame with all holidays
     df = pd.DataFrame(events_data, columns=['name', 'start', 'end', 'status'])
     df = df.sort_values(by='name')
     df['name_sort'] = df['name'].apply(unidecode)
     df = df.sort_values(by=['name_sort']).drop(columns=['name_sort'])
-
     # _, col1, _ = st.columns([2, 3, 2])
     # with col1:
     #     st.dataframe(
@@ -68,10 +67,11 @@ def show_holidays():
     #         height=750,
     #         hide_index=True,
     #     )
-
     # How many days from each month are holidays
     holidays = df.join(
-        df.apply(lambda p: pd.Series(pd.date_range(pd.to_datetime(p['start']), pd.to_datetime(p['end']) - pd.Timedelta(days=1), freq='B').to_period('M')), axis=1)
+        df.apply(lambda p: pd.Series(
+            pd.date_range(pd.to_datetime(p['start']), pd.to_datetime(p['end']) - pd.Timedelta(days=1),
+                          freq='B').to_period('M')), axis=1)
         .apply(lambda x: pd.Series(x).value_counts(), axis=1)
         .fillna(0)
         .astype(int)
@@ -85,11 +85,27 @@ def show_holidays():
             holidays[month] = 0
     columns_to_keep = ['name'] + MONTHS
     holidays = holidays[columns_to_keep]
-
     ## Group by name and sum
     holidays = holidays.groupby('name').sum().reset_index()
     holidays['name_sort'] = holidays['name'].apply(unidecode)
     holidays = holidays.sort_values(by=['name_sort']).reset_index().drop(columns=['name_sort', 'index'])
+
+    # Fix names to match Kenjo with Google
+    load_team_members()
+    team_members = st.session_state.team_data['Nombre'].values
+
+    holidays['name'] = holidays['name'].apply(
+        lambda x: difflib.get_close_matches(x, team_members, n=1, cutoff=0.8)[0]
+        if difflib.get_close_matches(x, team_members, n=1, cutoff=0.8) else x
+    )
+    # TODO: Fix this. In Kenjo Walter is called Walt. Fix it
+    holidays['name'] = holidays['name'].replace('Walt', 'Walter Díaz')
+
+    return holidays
+
+
+def show_holidays():
+    holidays = compute_monthly_holidays()
 
     # Style the table
     def highlight_rows(row):

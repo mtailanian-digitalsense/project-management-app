@@ -6,6 +6,8 @@ import plotly.express as px
 
 from .team import load_team_members
 from .projects import load_projects
+from .holidays import compute_monthly_holidays
+from .assignation_total import compute_assingation_hours_total
 
 
 MONTHS = [
@@ -67,6 +69,23 @@ def show_metrics():
     for quarter, months in QUARTERS.items():
         metric_by_quarter[quarter] = metric[months].sum() / len(months)
     df_quarter_metric = pd.Series(metric_by_quarter).round(0).to_frame(name='% Asignación').T
+
+    #
+    #
+    #
+    # DEBUG
+    monthly_assignation_h = compute_assingation_hours_total().set_index('Equipo')
+    monthly_holidays_d = compute_monthly_holidays().rename(columns={"name": "Equipo"}).set_index('Equipo')
+    monthly_availability_h = team_members[['Nombre'] + MONTHS].rename(columns={"Nombre": "Equipo"}).set_index('Equipo')
+
+    # Keep only the indexes from the technical team (those listed in 'Equipo' column in the webapp)
+    monthly_assignation_h = monthly_assignation_h.reindex(monthly_availability_h.index)
+    monthly_holidays_d = monthly_holidays_d.reindex(monthly_availability_h.index)
+
+
+    #
+    #
+    #
 
     st.header("% de asignación por quarter")
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
@@ -143,3 +162,7 @@ def show_metrics():
             use_container_width=True,
             hide_index=True,
         )
+
+
+if __name__ == '__main__':
+    show_metrics()
