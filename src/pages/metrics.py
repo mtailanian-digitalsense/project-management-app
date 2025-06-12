@@ -1,4 +1,5 @@
 import calendar
+import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
@@ -50,17 +51,48 @@ def compute_assignation_hours():
     return assignation_hours
 
 
-def show_metrics():
-
-    load_team_members()
-    team_members = st.session_state.team_data
-    team_members[MONTHS] = team_members[MONTHS].apply(lambda x: x.astype(int))
-
+def show_assignation_metric_no_holidays(team_members):
     assignation_hours = compute_assignation_hours()
 
     available_hours = team_members[MONTHS].sum(axis=0)
     assigned_hours = assignation_hours[MONTHS].sum(axis=0)
     metric = assigned_hours / available_hours * 100
+
+    show_metric(metric)
+
+
+def show_assignation_metric_considering_holidays(team_members):
+
+    monthly_assignation_h = compute_assingation_hours_total().set_index('Equipo')
+    monthly_holidays_d = compute_monthly_holidays().rename(columns={"name": "Equipo"}).set_index('Equipo')
+    monthly_availability_h = team_members[['Nombre'] + MONTHS].rename(columns={"Nombre": "Equipo"}).set_index('Equipo')
+
+    # Keep only the indexes from the technical team (those listed in 'Equipo' column in the webapp)
+    monthly_assignation_h = monthly_assignation_h.reindex(monthly_availability_h.index).fillna(0)
+    monthly_holidays_d = monthly_holidays_d.reindex(monthly_availability_h.index)
+
+    # Computing real availability
+    # Note that this computation is an approximation. # TODO: fix to make it exact
+    # This computation is not exact. It could be the case where someone has an assigned project + holidays during the
+    #   same period, and then some free time during other days of the month. This computation will make it look like is
+    #   all full.
+    monthly_holidays_h = monthly_availability_h / 4 / 5 * monthly_holidays_d
+    monthly_holidays_h = monthly_holidays_h.fillna(0)
+    real_availability_h = monthly_availability_h - (monthly_assignation_h + monthly_holidays_h)
+    # Clip at 0 because project assignations do not stop at holidays
+    #   so we could have duplicated assignation: project + holidays
+    real_availability_h = real_availability_h.clip(lower=0)
+
+
+    available_hours = monthly_availability_h[MONTHS].sum(axis=0)
+    assigned_hours = (monthly_availability_h - real_availability_h)[MONTHS].sum(axis=0)
+
+    metric = assigned_hours / available_hours * 100
+
+    show_metric(metric)
+
+
+def show_metric(metric):
     metric = metric.round(0).astype(int)
     df_monthly_metric = metric.to_frame(name='% Asignación').T
 
@@ -69,23 +101,6 @@ def show_metrics():
     for quarter, months in QUARTERS.items():
         metric_by_quarter[quarter] = metric[months].sum() / len(months)
     df_quarter_metric = pd.Series(metric_by_quarter).round(0).to_frame(name='% Asignación').T
-
-    #
-    #
-    #
-    # DEBUG
-    monthly_assignation_h = compute_assingation_hours_total().set_index('Equipo')
-    monthly_holidays_d = compute_monthly_holidays().rename(columns={"name": "Equipo"}).set_index('Equipo')
-    monthly_availability_h = team_members[['Nombre'] + MONTHS].rename(columns={"Nombre": "Equipo"}).set_index('Equipo')
-
-    # Keep only the indexes from the technical team (those listed in 'Equipo' column in the webapp)
-    monthly_assignation_h = monthly_assignation_h.reindex(monthly_availability_h.index)
-    monthly_holidays_d = monthly_holidays_d.reindex(monthly_availability_h.index)
-
-
-    #
-    #
-    #
 
     st.header("% de asignación por quarter")
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
@@ -102,7 +117,7 @@ def show_metrics():
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
     with col2:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -116,7 +131,7 @@ def show_metrics():
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
     with col3:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -130,7 +145,7 @@ def show_metrics():
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
     with col4:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -144,7 +159,7 @@ def show_metrics():
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
 
     _, col1, _ = st.columns([2, 4, 2])
     with col1:
@@ -162,6 +177,17 @@ def show_metrics():
             use_container_width=True,
             hide_index=True,
         )
+
+
+def show_metrics():
+    load_team_members()
+    team_members = st.session_state.team_data
+    team_members[MONTHS] = team_members[MONTHS].apply(lambda x: x.astype(int))
+
+    st.header("Considerando licencias")
+    show_assignation_metric_considering_holidays(team_members)
+    st.header("Sin considerar licencias")
+    show_assignation_metric_no_holidays(team_members)
 
 
 if __name__ == '__main__':
