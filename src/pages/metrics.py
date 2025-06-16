@@ -89,10 +89,10 @@ def show_assignation_metric_considering_holidays(team_members):
 
     metric = assigned_hours / available_hours * 100
 
-    show_metric(metric)
+    show_metric(metric, prefix="holidays_")
 
 
-def show_metric(metric):
+def show_metric(metric, prefix=""):
     metric = metric.round(0).astype(int)
     df_monthly_metric = metric.to_frame(name='% Asignación').T
 
@@ -117,7 +117,7 @@ def show_metric(metric):
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
+        st.plotly_chart(fig, use_container_width=True, key=f"{prefix}q1")
     with col2:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -131,7 +131,7 @@ def show_metric(metric):
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
+        st.plotly_chart(fig, use_container_width=True, key=f"{prefix}q2")
     with col3:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -145,7 +145,7 @@ def show_metric(metric):
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
+        st.plotly_chart(fig, use_container_width=True, key=f"{prefix}q3")
     with col4:
         fig = go.Figure(data=[go.Pie(
             labels=['Asignado', 'Libre'],
@@ -159,7 +159,7 @@ def show_metric(metric):
             title=dict(text='', font=dict(size=24)),
             margin=dict(t=0, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig, use_container_width=True, key=f"key_{np.random.randint(1000)}")
+        st.plotly_chart(fig, use_container_width=True, key=f"{prefix}q4")
 
     _, col1, _ = st.columns([2, 4, 2])
     with col1:
